@@ -1,0 +1,41 @@
+﻿@page "/datalist"
+@using Pruebas.Blazor.Covid.Models
+@using Pruebas.Blazor.Covid.Services
+@inject ApiService ApiService
+
+<h3>Lista de Datos</h3>
+
+@if (covidData == null)
+{
+    <p>Cargando...</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date Checked</th>
+                <th>Positive Increase</th>
+                <th>Death Increase</th>
+                <!-- Agrega más encabezados según la API -->
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var data in covidData)
+            {
+                <tr>
+                    <td>@data.DateChecked</td>
+                    <td>@data.PositiveIncrease</td>
+                    <td>@data.DeathIncrease</td>
+                    <!-- Agrega más celdas según la API -->
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<CovidData> covidData;
+
+    protected override async Task OnInitializedAsync() => covidData = await ApiService.GetAsync<List<CovidData>>("https://api.covidtracking.com/v1/us/daily.json");
+}

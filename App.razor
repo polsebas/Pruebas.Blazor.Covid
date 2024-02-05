@@ -1,0 +1,14 @@
+﻿@*<Router AppAssembly="@typeof(Program).Assembly">*@
+<Router AppAssembly="@typeof(App).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <p>La página solicitada no existe.</p>
+        </LayoutView>
+    </NotFound>
+</Router>
+
+<NavLink href="datalist">Ver Datos</NavLink>
