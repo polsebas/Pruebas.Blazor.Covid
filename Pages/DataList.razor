@@ -1,41 +1,218 @@
 ﻿@page "/datalist"
-@using Pruebas.Blazor.Covid.Models
-@using Pruebas.Blazor.Covid.Services
+@inject NavigationManager NavigationManager
 @inject ApiService ApiService
+@inject IConfiguration Configuration
+@inject NavigationManager NavigationManager
 
-<h3>Lista de Datos</h3>
+<h3>COVID Tracking Data</h3>
 
-@if (covidData == null)
-{
-    <p>Cargando...</p>
-}
-else
+<button @onclick="RecargarPagina">Recargar Página</button>
+<button @onclick="RecargarDatos">Recargar Datos</button>
+<input type="text" value="@paginaActualTemp" @oninput="ActualizarTemp" @onkeydown="ValidarYManejarEnter" />
+<input type="text" @bind="searchTerm" placeholder="Buscar..." @oninput="RealizarBusqueda" />
+
+<!-- Paginador -->
+<div>
+    <button disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(1)">Primero</button>
+    <button disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(paginaActual -1 )">Atrás</button>
+    <span>Página @paginaActual de @totalPaginas</span>
+    <button disabled="@IsLastPage()" @onclick="(e) => IrAPagina(paginaActual + 1)">Siguiente</button>
+    <button disabled="@IsLastPage()" @onclick="(e) => IrAPagina(totalPaginas)">Último</button>
+    <label for="resultadosPorPagina">Resultados por Página:</label>
+    <select id="resultadosPorPagina" @bind="resultadosPorPagina" @oninput="CambiarResultadosPorPagina">
+        <option value="10">10 por página</option>
+        <option value="20">20 por página</option>
+        <option value="50">50 por página</option>
+    </select>
+</div>
+
+@if (paginatedCovidData != null && paginatedCovidData.Any())
 {
     <table class="table">
         <thead>
             <tr>
+                <th>Date</th>
+                <th>States</th>
+                <th>Positive</th>
+                <th>Negative</th>
+                <th>Pending</th>
+                <th>Hospitalized Currently</th>
+                <th>Hospitalized Cumulative</th>
+                <th>In ICU Currently</th>
+                <th>In ICU Cumulative</th>
+                <th>On Ventilator Currently</th>
+                <th>On Ventilator Cumulative</th>
                 <th>Date Checked</th>
-                <th>Positive Increase</th>
+                <th>Death</th>
+                <th>Hospitalized</th>
+                <th>Total Test Results</th>
+                <th>Last Modified</th>
+                <th>Recovered</th>
+                <th>Total</th>
+                <th>PosNeg</th>
                 <th>Death Increase</th>
-                <!-- Agrega más encabezados según la API -->
+                <th>Hospitalized Increase</th>
+                <th>Negative Increase</th>
+                <th>Positive Increase</th>
+                <th>Total Test Results Increase</th>
+                <th>Hash</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var data in covidData)
+            @foreach (var data in paginatedCovidData)
             {
                 <tr>
+                    <td>@data.Date</td>
+                    @*<td>@DateTimeOffset.FromUnixTimeMilliseconds(data.Date).ToString("yyyy-MM-dd")</td>*@
+                    <td>@data.States</td>
+                    <td>@data.Positive</td>
+                    <td>@data.Negative</td>
+                    <td>@data.Pending</td>
+                    <td>@data.HospitalizedCurrently</td>
+                    <td>@data.HospitalizedCumulative</td>
+                    <td>@data.InIcuCurrently</td>
+                    <td>@data.InIcuCumulative</td>
+                    <td>@data.OnVentilatorCurrently</td>
+                    <td>@data.OnVentilatorCumulative</td>
                     <td>@data.DateChecked</td>
-                    <td>@data.PositiveIncrease</td>
+                    @*<td>@data.DateChecked.ToString("yyyy-MM-ddTHH:mm:ssZ")</td>*@
+                    <td>@data.Death</td>
+                    <td>@data.Hospitalized</td>
+                    <td>@data.TotalTestResults</td>
+                    <td>@data.LastModified</td>
+                    @*<td>@data.LastModified.ToString("yyyy-MM-ddTHH:mm:ssZ")</td>*@
+                    <td>@data.Recovered</td>
+                    <td>@data.Total</td>
+                    <td>@data.PosNeg</td>
                     <td>@data.DeathIncrease</td>
-                    <!-- Agrega más celdas según la API -->
+                    <td>@data.HospitalizedIncrease</td>
+                    <td>@data.NegativeIncrease</td>
+                    <td>@data.PositiveIncrease</td>
+                    <td>@data.TotalTestResultsIncrease</td>
+                    <td>@data.Hash</td>
                 </tr>
             }
         </tbody>
     </table>
 }
+else
+{
+    <p>No hay información disponible.</p>
+}
 
 @code {
-    private List<CovidData> covidData;
+    private List<CovidData> covidData = new List<CovidData>();
+    private List<CovidData> paginatedCovidData = new List<CovidData>();
+    private int paginaActual = 1;
+    private int resultadosPorPagina = 10;
+    private int totalPaginas = 0;
+    private string paginaActualTemp = "";
+    private string searchTerm = string.Empty;
 
-    protected override async Task OnInitializedAsync() => covidData = await ApiService.GetAsync<List<CovidData>>("https://api.covidtracking.com/v1/us/daily.json");
+    protected override async Task OnInitializedAsync() => await InicializarGrilla();
+
+    private async Task CargarDatos(string apiUrl)
+    {
+        var allData = await ApiService.GetAsync<List<CovidData>>(apiUrl);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            covidData = allData
+                .Where(data =>
+                    data.DateChecked.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    data.PositiveIncrease.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    data.DeathIncrease.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        else
+        {
+            covidData = allData;
+        }
+
+        PaginarDatos();
+    }
+
+    private async Task InicializarGrilla()
+    {
+        paginaActual = 1;
+        resultadosPorPagina = 10;
+        totalPaginas = 0;
+        var url = "https://api.covidtracking.com/v1/us/daily.json"; // Configuration["CovidApi:BaseUrl"];
+        if (string.IsNullOrEmpty(url))
+        {
+            throw new ApplicationException("Configuración EndPoint incorrecta");
+        }
+        await CargarDatos(url);
+    }
+
+    private void PaginarDatos()
+    {
+        int inicio = (paginaActual - 1) * resultadosPorPagina;
+        paginatedCovidData = covidData.Skip(inicio).Take(resultadosPorPagina).ToList();
+        CalcularTotalPaginas();
+        StateHasChanged();
+    }
+
+    // Métodos de paginación
+    private void IrAPagina(int pagina)
+    {
+        if (pagina >= 1 && pagina <= totalPaginas)
+        {
+            paginaActual = pagina;
+        }
+        PaginarDatos();
+    }
+
+    private void CambiarResultadosPorPagina(ChangeEventArgs e)
+    {
+        resultadosPorPagina = Convert.ToInt32(e.Value);
+        paginaActual = 1;
+        PaginarDatos();
+        StateHasChanged();
+    }
+
+    // Botón para recargar datos
+    private void RecargarPagina() => NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+
+    private async Task RecargarDatos()
+    {
+        searchTerm = string.Empty;
+        await InicializarGrilla();
+    }
+    private bool IsFirstPage() => paginaActual == 1;
+
+    private bool IsLastPage() => paginaActual == totalPaginas;
+
+    private void CalcularTotalPaginas()
+    {
+        totalPaginas = (int)Math.Ceiling((double)covidData.Count / resultadosPorPagina);
+        StateHasChanged();
+    }
+
+    private void ValidarYManejarEnter(KeyboardEventArgs e)
+    {
+        // Validar que la tecla presionada sea un número
+        if (!char.IsDigit(e.Key.FirstOrDefault()) && e.Key != "Enter")
+        {
+            return;
+        }
+
+        // Verificar si la tecla presionada es Enter (código 13)
+        if (e.Key == "Enter")
+        {
+            // Validar la entrada y actualizar 'paginaActual' si es válida
+            if (int.TryParse(paginaActualTemp, out int result))
+            {
+                IrAPagina(result);
+            }            
+        }
+    }
+
+    private void ActualizarTemp(ChangeEventArgs e) => paginaActualTemp = e.Value?.ToString() ?? string.Empty;
+
+    private async Task RealizarBusqueda(ChangeEventArgs e)
+    {
+        searchTerm = e.Value?.ToString() ?? string.Empty;
+        await InicializarGrilla();
+    }
 }

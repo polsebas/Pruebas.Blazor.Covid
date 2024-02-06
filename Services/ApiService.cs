@@ -1,30 +1,47 @@
-﻿using System.Text.Json;
+﻿using Microsoft.Extensions.Caching.Memory;
+using System.Text.Json;
 
-namespace Pruebas.Blazor.Covid.Services
+public class ApiService
 {
-    public class ApiService
+    private readonly HttpClient _httpClient;
+    private readonly JsonSerializerOptions _jsonSerializerOptions;
+    private readonly IMemoryCache _memoryCache;
+
+    public ApiService(HttpClient httpClient, IMemoryCache memoryCache)
     {
-        private readonly HttpClient _httpClient;
-        private readonly JsonSerializerOptions _jsonSerializerOptions;
+        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
 
-        public ApiService(HttpClient httpClient)
+        _jsonSerializerOptions = new JsonSerializerOptions
         {
-            _httpClient = httpClient;
-            _jsonSerializerOptions = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            };
+            PropertyNameCaseInsensitive = true,
+        };
+    }
+
+    public async Task<T?> GetAsync<T>(string endpoint)
+    {
+        if (_memoryCache.TryGetValue(endpoint, out T cachedResult))
+        {
+            return cachedResult;
         }
 
-        public async Task<T?> GetAsync<T>(string endpoint)
+        var response = await _httpClient.GetAsync(endpoint);
+
+        response.EnsureSuccessStatusCode();
+
+        var contentStream = await response.Content.ReadAsStreamAsync();
+
+        var result = await JsonSerializer.DeserializeAsync<T>(contentStream, _jsonSerializerOptions);
+
+        // Almacenar en caché el resultado con una expiración de 10 minutos
+        var cacheEntryOptions = new MemoryCacheEntryOptions
         {
-            var response = await _httpClient.GetAsync(endpoint);
+            AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
+            SlidingExpiration = TimeSpan.FromMinutes(5) // Puedes ajustar según tus necesidades.
+        };
 
-            response.EnsureSuccessStatusCode();
+        _memoryCache.Set(endpoint, result, cacheEntryOptions);
 
-            var contentStream = await response.Content.ReadAsStreamAsync();
-
-            return await JsonSerializer.DeserializeAsync<T>(contentStream, _jsonSerializerOptions);
-        }
+        return result;
     }
 }
