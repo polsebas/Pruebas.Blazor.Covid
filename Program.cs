@@ -2,6 +2,7 @@ using Pruebas.Blazor.Covid;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.Extensions.Configuration;
+using BlazorStrap;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -11,6 +12,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 // Configuración de MemoryCache
 builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ApiService>();
+builder.Services.AddBlazorStrap();
 
 //builder.Configuration.AddJsonFile("appsettings.json");
 //builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);

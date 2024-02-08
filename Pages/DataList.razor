@@ -1,104 +1,120 @@
 ﻿@page "/datalist"
+@using BlazorStrap;
 @inject NavigationManager NavigationManager
 @inject ApiService ApiService
 @inject IConfiguration Configuration
 @inject NavigationManager NavigationManager
 
-<h3>COVID Tracking Data</h3>
+<BSContainer Container="Container.Fluid">
+    <h3>COVID Tracking Data</h3>
 
-<button @onclick="RecargarPagina">Recargar Página</button>
-<button @onclick="RecargarDatos">Recargar Datos</button>
-<input type="text" value="@paginaActualTemp" @oninput="ActualizarTemp" @onkeydown="ValidarYManejarEnter" />
-<input type="text" @bind="searchTerm" placeholder="Buscar..." @oninput="RealizarBusqueda" />
+    <BSButton Color="BSColor.Info" @onclick="RecargarPagina" IsSubmit="true">Recargar Página</BSButton>
+    <BSButton Color="BSColor.Dark" @onclick="RecargarDatos">Recargar Datos</BSButton>
 
-<!-- Paginador -->
-<div>
-    <button disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(1)">Primero</button>
-    <button disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(paginaActual -1 )">Atrás</button>
-    <span>Página @paginaActual de @totalPaginas</span>
-    <button disabled="@IsLastPage()" @onclick="(e) => IrAPagina(paginaActual + 1)">Siguiente</button>
-    <button disabled="@IsLastPage()" @onclick="(e) => IrAPagina(totalPaginas)">Último</button>
-    <label for="resultadosPorPagina">Resultados por Página:</label>
-    <select id="resultadosPorPagina" @bind="resultadosPorPagina" @oninput="CambiarResultadosPorPagina">
-        <option value="10">10 por página</option>
-        <option value="20">20 por página</option>
-        <option value="50">50 por página</option>
-    </select>
-</div>
+    <input type="text" value="@paginaActualTemp" @oninput="ActualizarTemp" @onkeydown="ValidarYManejarEnter" />
 
-@if (paginatedCovidData != null && paginatedCovidData.Any())
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>States</th>
-                <th>Positive</th>
-                <th>Negative</th>
-                <th>Pending</th>
-                <th>Hospitalized Currently</th>
-                <th>Hospitalized Cumulative</th>
-                <th>In ICU Currently</th>
-                <th>In ICU Cumulative</th>
-                <th>On Ventilator Currently</th>
-                <th>On Ventilator Cumulative</th>
-                <th>Date Checked</th>
-                <th>Death</th>
-                <th>Hospitalized</th>
-                <th>Total Test Results</th>
-                <th>Last Modified</th>
-                <th>Recovered</th>
-                <th>Total</th>
-                <th>PosNeg</th>
-                <th>Death Increase</th>
-                <th>Hospitalized Increase</th>
-                <th>Negative Increase</th>
-                <th>Positive Increase</th>
-                <th>Total Test Results Increase</th>
-                <th>Hash</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var data in paginatedCovidData)
-            {
-                <tr>
-                    <td>@data.Date</td>
-                    @*<td>@DateTimeOffset.FromUnixTimeMilliseconds(data.Date).ToString("yyyy-MM-dd")</td>*@
-                    <td>@data.States</td>
-                    <td>@data.Positive</td>
-                    <td>@data.Negative</td>
-                    <td>@data.Pending</td>
-                    <td>@data.HospitalizedCurrently</td>
-                    <td>@data.HospitalizedCumulative</td>
-                    <td>@data.InIcuCurrently</td>
-                    <td>@data.InIcuCumulative</td>
-                    <td>@data.OnVentilatorCurrently</td>
-                    <td>@data.OnVentilatorCumulative</td>
-                    <td>@data.DateChecked</td>
-                    @*<td>@data.DateChecked.ToString("yyyy-MM-ddTHH:mm:ssZ")</td>*@
-                    <td>@data.Death</td>
-                    <td>@data.Hospitalized</td>
-                    <td>@data.TotalTestResults</td>
-                    <td>@data.LastModified</td>
-                    @*<td>@data.LastModified.ToString("yyyy-MM-ddTHH:mm:ssZ")</td>*@
-                    <td>@data.Recovered</td>
-                    <td>@data.Total</td>
-                    <td>@data.PosNeg</td>
-                    <td>@data.DeathIncrease</td>
-                    <td>@data.HospitalizedIncrease</td>
-                    <td>@data.NegativeIncrease</td>
-                    <td>@data.PositiveIncrease</td>
-                    <td>@data.TotalTestResultsIncrease</td>
-                    <td>@data.Hash</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <p>No hay información disponible.</p>
-}
+    <div class="@BS.Input_Group mb-2">
+        <span class="@BS.Input_Group_Text">Custom Filter</span>
+        <BSInput InputType="InputType.Text" placeholder="Buscar..." Value="searchTerm" @oninput="RealizarBusqueda" UpdateOnInput="true" />
+    </div>
+
+    <!-- Paginador -->
+    <div>
+        <BSButton Color="BSColor.Light" disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(1)">Primero</BSButton>
+        <BSButton Color="BSColor.Light" disabled="@IsFirstPage()" @onclick="(e) => IrAPagina(paginaActual -1 )">Atrás</BSButton>
+        <span>Página @paginaActual de @totalPaginas</span>
+        <BSButton Color="BSColor.Light" disabled="@IsLastPage()" @onclick="(e) => IrAPagina(paginaActual + 1)">Siguiente</BSButton>
+        <BSButton Color="BSColor.Light" disabled="@IsLastPage()" @onclick="(e) => IrAPagina(totalPaginas)">Último</BSButton>
+        <label for="resultadosPorPagina">Resultados por Página:</label>
+        <select id="resultadosPorPagina" @bind="resultadosPorPagina" @oninput="CambiarResultadosPorPagina">
+            <option value="10">10 por página</option>
+            <option value="20">20 por página</option>
+            <option value="50">50 por página</option>
+        </select>
+        @*<BSDropdown id="resultadosPorPagina"  @oninput="CambiarResultadosPorPagina">
+            <Toggler><BSToggle  Class="btn btn-secondary">Resultados por pagina</BSToggle></Toggler>
+            <Content>
+                <BSDropdownItem value="10">10 por página</BSDropdownItem>
+                <BSDropdownItem value="20">20 por página</BSDropdownItem>
+                <BSDropdownItem value="50">50 por página</BSDropdownItem>
+            </Content>
+        </BSDropdown>*@
+    </div>
+
+    @if (paginatedCovidData != null && paginatedCovidData.Any())
+    {
+        <BSTable Color="BSColor.Light" IsBordered="true" IsBorderLess="false" IsCaptionTop="true" IsStriped="true">
+            <BSTHead>
+                <BSTR>
+                    <BSTD>Date</BSTD>
+                    <BSTD>States</BSTD>
+                    <BSTD>Positive</BSTD>
+                    <BSTD>Negative</BSTD>
+                    <BSTD>Pending</BSTD>
+                    <BSTD>Hospitalized Currently</BSTD>
+                    <BSTD>Hospitalized Cumulative</BSTD>
+                    <BSTD>In ICU Currently</BSTD>
+                    <BSTD>In ICU Cumulative</BSTD>
+                    <BSTD>On Ventilator Currently</BSTD>
+                    <BSTD>On Ventilator Cumulative</BSTD>
+                    <BSTD>Date Checked</BSTD>
+                    <BSTD>DeaBSTD</BSTD>
+                    <BSTD>Hospitalized</BSTD>
+                    <BSTD>Total Test Results</BSTD>
+                    <BSTD>Last Modified</BSTD>
+                    <BSTD>Recovered</BSTD>
+                    <BSTD>Total</BSTD>
+                    <BSTD>PosNeg</BSTD>
+                    <BSTD>DeaBSTD Increase</BSTD>
+                    <BSTD>Hospitalized Increase</BSTD>
+                    <BSTD>Negative Increase</BSTD>
+                    <BSTD>Positive Increase</BSTD>
+                    <BSTD>Total Test Results Increase</BSTD>
+                    <BSTD>Hash</BSTD>
+                </BSTR>
+            </BSTHead>
+            <BSTBody>
+                @foreach (var data in paginatedCovidData)
+                {
+                    <BSTR>
+                        <BSTD>@data.Date</BSTD>
+                        @*<BSTD>@DateTimeOffset.FromUnixTimeMilliseconds(data.Date).ToString("yyyy-MM-dd")</BSTD>*@
+                        <BSTD>@data.States</BSTD>
+                        <BSTD>@data.Positive</BSTD>
+                        <BSTD>@data.Negative</BSTD>
+                        <BSTD>@data.Pending</BSTD>
+                        <BSTD>@data.HospitalizedCurrently</BSTD>
+                        <BSTD>@data.HospitalizedCumulative</BSTD>
+                        <BSTD>@data.InIcuCurrently</BSTD>
+                        <BSTD>@data.InIcuCumulative</BSTD>
+                        <BSTD>@data.OnVentilatorCurrently</BSTD>
+                        <BSTD>@data.OnVentilatorCumulative</BSTD>
+                        <BSTD>@data.DateChecked</BSTD>
+                        @*<BSTD>@data.DateChecked.ToString("yyyy-MM-ddTHH:mm:ssZ")</BSTD>*@
+                        <BSTD>@data.Death</BSTD>
+                        <BSTD>@data.Hospitalized</BSTD>
+                        <BSTD>@data.TotalTestResults</BSTD>
+                        <BSTD>@data.LastModified</BSTD>
+                        @*<BSTD>@data.LastModified.ToString("yyyy-MM-ddTHH:mm:ssZ")</BSTD>*@
+                        <BSTD>@data.Recovered</BSTD>
+                        <BSTD>@data.Total</BSTD>
+                        <BSTD>@data.PosNeg</BSTD>
+                        <BSTD>@data.DeathIncrease</BSTD>
+                        <BSTD>@data.HospitalizedIncrease</BSTD>
+                        <BSTD>@data.NegativeIncrease</BSTD>
+                        <BSTD>@data.PositiveIncrease</BSTD>
+                        <BSTD>@data.TotalTestResultsIncrease</BSTD>
+                        <BSTD>@data.Hash</BSTD>
+                    </BSTR>
+                }
+            </BSTBody>
+        </BSTable>
+    }
+    else
+    {
+        <p>No hay información disponible.</p>
+    }
+</BSContainer>
 
 @code {
     private List<CovidData> covidData = new List<CovidData>();
@@ -118,11 +134,10 @@ else
         if (!string.IsNullOrWhiteSpace(searchTerm))
         {
             covidData = allData
-                .Where(data =>
-                    data.DateChecked.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    data.PositiveIncrease.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    data.DeathIncrease.ToString().Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            .Where(data =>
+                PropiedadesContienenTermino(data, searchTerm)
+            )
+            .ToList();
         }
         else
         {
@@ -130,6 +145,20 @@ else
         }
 
         PaginarDatos();
+    }
+
+    private bool PropiedadesContienenTermino(CovidData data, string term)
+    {
+        var properties = typeof(CovidData).GetProperties();
+        foreach (var property in properties)
+        {
+            var value = property.GetValue(data);
+            if (value != null && value.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private async Task InicializarGrilla()
@@ -204,7 +233,7 @@ else
             if (int.TryParse(paginaActualTemp, out int result))
             {
                 IrAPagina(result);
-            }            
+            }
         }
     }
 
